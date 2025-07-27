@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drowsiness Detection System</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #0f0f0f;
+            color: #f8f8f8;
+        }
+        
+        .video-container {
+            position: relative;
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        #videoElement {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2em;
+            font-weight: bold;
+            background-color: rgba(220, 38, 38, 0.7);
+            opacity: 0;
+            transition: opacity 0.5s, transform 0.3s;
+            transform: scale(1.1);
+            z-index: 20;
+        }
+        
+        .alert-active {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            position: relative;
+        }
+        
+        .status-ok {
+            background-color: #10b981;
+            box-shadow: 0 0 8px #10b981;
+        }
+        
+        .status-warning {
+            background-color: #dc2626;
+            box-shadow: 0 0 8px #dc2626;
+        }
+        
+        .btn-primary {
+            background-color: #dc2626;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background-color: #b91c1c;
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary:disabled {
+            background-color: #7f1d1d;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        .status-card {
+            background-color: #1f1f1f;
+            border-radius: 12px;
+            border-left: 4px solid #dc2626;
+            transition: all 0.3s;
+        }
+        
+        .status-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1rem;
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+            }
+        }
+        
+        /* Progress bar for calibration */
+        .progress-bar {
+            width: 100%;
+            background-color: #374151;
+            border-radius: 999px;
+            height: 8px;
+            overflow: hidden;
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #dc2626;
+            transition: width 0.2s ease;
+            border-radius: 999px;
+        }
+        
+        /* Mode toggle switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 28px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #374151;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #dc2626;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(32px);
+        }
+        
+        /* Threshold slider */
+        .threshold-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            background: #374151;
+            border-radius: 999px;
+            outline: none;
+        }
+        
+        .threshold-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #dc2626;
+            cursor: pointer;
+            border: 2px solid white;
+        }
+        
+        /* Stats counter */
+        .stat-counter {
+            background-color: #1f1f1f;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            display: inline-block;
+            min-width: 3rem;
+            text-align: center;
+            border: 1px solid #374151;
+        }
+        
+        /* Mobile responsive adjustments */
+        @media (max-width: 768px) {
+            .video-container {
+                height: 40vh;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .btn-group button {
+                margin: 0.25rem 0;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen flex flex-col">
+        <header class="bg-gradient-to-r from-black to-red-900 shadow-md py-4">
+            <div class="container mx-auto px-4 flex justify-between items-center">
+                <div class="flex items-center">
+                    <i class="fas fa-eye text-2xl mr-3 text-red-600"></i>
+                    <h1 class="text-xl md:text-2xl font-bold">DriveSafe</h1>
+                </div>
+                <div class="flex items-center">
+                    <div class="hidden md:flex text-sm mr-4">
+                        <span id="connectionStatus" class="flex items-center">
+                            <span class="status-indicator status-warning" id="serverStatusIndicator"></span>
+                            <span id="serverStatus">Disconnected</span>
+                        </span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="mr-2 text-sm">Dark Mode</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="darkModeToggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <main class="flex-grow container mx-auto px-4 py-6">
+            <div id="statusMessage" class="bg-red-900 text-white px-4 py-3 rounded-lg mb-4 shadow-lg hidden transform transition-all duration-300 scale-95 opacity-0">
+                Connecting to backend server...
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2">
+                    <div class="bg-black rounded-xl shadow-xl overflow-hidden">
+                        <div class="video-container" style="height: 480px;">
+                            <video id="videoElement" autoplay muted></video>
+                            <div id="drowsyOverlay" class="overlay">
+                                <div class="text-center">
+                                    <i class="fas fa-exclamation-triangle text-4xl mb-2 animate-pulse"></i>
+                                    <div class="text-3xl font-bold">DROWSY ALERT!</div>
+                                    <div class="text-xl mt-2">Wake up! Stay alert!</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4">
+                            <div class="flex flex-wrap gap-3 mb-4 btn-group">
+                                <button id="startBtn" class="btn-primary px-6 py-3 rounded-lg font-medium flex-1 flex justify-center items-center shadow-lg">
+                                    <i class="fas fa-play mr-2"></i>
+                                    <span>Start Monitoring</span>
+                                </button>
+                                <button id="calibrateBtn" class="bg-gray-800 hover:bg-gray-700 px-6 py-3 rounded-lg font-medium transition flex-1 flex justify-center items-center shadow-lg">
+                                    <i class="fas fa-sync-alt mr-2"></i>
+                                    <span>Calibrate</span>
+                                </button>
+                                <button id="stopBtn" class="bg-gray-800 hover:bg-gray-700 px-6 py-3 rounded-lg font-medium transition flex-1 flex justify-center items-center shadow-lg" disabled>
+                                    <i class="fas fa-stop mr-2"></i>
+                                    <span>Stop</span>
+                                </button>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                                <div class="status-card p-3 flex items-center">
+                                    <div id="faceStatusIndicator" class="status-indicator status-warning mr-2"></div>
+                                    <div>
+                                        <div class="text-xs text-gray-400">Face</div>
+                                        <div id="faceStatus" class="font-medium">Not detected</div>
+                                    </div>
+                                </div>
+                                <div class="status-card p-3 flex items-center">
+                                    <div id="eyeStatusIndicator" class="status-indicator status-warning mr-2"></div>
+                                    <div>
+                                        <div class="text-xs text-gray-400">Eyes</div>
+                                        <div id="eyeStatus" class="font-medium">N/A</div>
+                                    </div>
+                                </div>
+                                <div class="status-card p-3 flex items-center">
+                                    <div id="yawnStatusIndicator" class="status-indicator status-warning mr-2"></div>
+                                    <div>
+                                        <div class="text-xs text-gray-400">Mouth</div>
+                                        <div id="yawnStatus" class="font-medium">N/A</div>
+                                    </div>
+                                </div>
+                                <div class="status-card p-3 flex items-center">
+                                    <div class="text-xs text-gray-400">EAR Value</div>
+                                    <div id="earValue" class="font-medium ml-auto stat-counter">N/A</div>
+                                </div>
+                            </div>
+                            
+                            <div id="calibrationProgress" class="hidden mb-4">
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span>Calibrating...</span>
+                                    <span id="calibrationTime">5s</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-bar-fill" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="lg:col-span-1">
+                    <div class="bg-black rounded-xl shadow-xl p-6 h-full">
+                        <h2 class="text-xl font-semibold mb-4 border-b border-gray-800 pb-2">
+                            <i class="fas fa-sliders-h mr-2 text-red-600"></i>
+                            System Controls
+                        </h2>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <h3 class="font-medium">Alert Sensitivity</h3>
+                                    <span id="sensitivityValue" class="text-sm bg-gray-800 px-2 py-1 rounded">Medium</span>
+                                </div>
+                                <input type="range" min="1" max="5" value="3" class="threshold-slider" id="sensitivitySlider">
+                                <div class="flex justify-between text-xs text-gray-400 mt-1">
+                                    <span>Low</span>
+                                    <span>High</span>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <h3 class="font-medium">Eye Threshold</h3>
+                                    <span id="thresholdValue" class="text-sm bg-gray-800 px-2 py-1 rounded">0.25</span>
+                                </div>
+                                <input type="range" min="0.15" max="0.35" step="0.01" value="0.25" class="threshold-slider" id="thresholdSlider">
+                            </div>
+                            
+                            <div class="flex justify-between items-center p-4 bg-gray-900 rounded-lg">
+                                <div>
+                                    <h3 class="font-medium">Night Mode</h3>
+                                    <p class="text-sm text-gray-400">Improve detection in low light</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="nightModeToggle">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            
+                            <div class="flex justify-between items-center p-4 bg-gray-900 rounded-lg">
+                                <div>
+                                    <h3 class="font-medium">Sound Alerts</h3>
+                                    <p class="text-sm text-gray-400">Play sound on detection</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="soundToggle" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <h2 class="text-xl font-semibold mb-4 border-b border-gray-800 pb-2">
+                                <i class="fas fa-chart-line mr-2 text-red-600"></i>
+                                Statistics
+                            </h2>
+                            
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="bg-gray-900 p-4 rounded-lg">
+                                    <div class="text-sm text-gray-400">Alert Count</div>
+                                    <div class="text-2xl font-bold mt-1" id="alertCount">0</div>
+                                </div>
+                                <div class="bg-gray-900 p-4 rounded-lg">
+                                    <div class="text-sm text-gray-400">Monitor Time</div>
+                                    <div class="text-2xl font-bold mt-1" id="monitorTime">00:00</div>
+                                </div>
+                                <div class="bg-gray-900 p-4 rounded-lg">
+                                    <div class="text-sm text-gray-400">Avg. EAR</div>
+                                    <div class="text-2xl font-bold mt-1" id="avgEAR">0.00</div>
+                                </div>
+                                <div class="bg-gray-900 p-4 rounded-lg">
+                                    <div class="text-sm text-gray-400">Face Conf.</div>
+                                    <div class="text-2xl font-bold mt-1" id="faceConfidence">0%</div>
+                                </div>
+                            </div>
+                            
+                            <button id="resetStatsBtn" class="w-full mt-4 bg-gray-800 hover:bg-gray-700 px-6 py-3 rounded-lg font-medium transition flex justify-center items-center">
+                                <i class="fas fa-redo-alt mr-2"></i>
+                                <span>Reset Statistics</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-6">
+                <div class="bg-black rounded-xl shadow-xl overflow-hidden">
+                    <div class="flex justify-between items-center p-4 border-b border-gray-800">
+                        <h2 class="text-xl font-semibold">
+                            <i class="fas fa-exclamation-circle mr-2 text-red-600"></i>
+                            Troubleshooting
+                        </h2>
+                        <button id="toggleTroubleshoot" class="text-sm text-gray-400 hover:text-white">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                    </div>
+                    
+                    <div id="troubleshootContent" class="hidden p-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <h3 class="font-medium mb-2 flex items-center">
+                                    <i class="fas fa-server text-red-600 mr-2"></i>
+                                    Backend Connection
+                                </h3>
+                                <ul class="text-sm space-y-2 text-gray-300">
+                                    <li class="flex items-start">
+                                        <i class="fas fa-circle text-xs mt-1 mr-2 text-red-600"></i>
+                                        <span>Make sure the backend server is running: <code class="bg-gray-800 px-1 rounded">python app.py</code></span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <i class="fas fa-circle text-xs mt-1 mr-2 text-red-600"></i>
+                                        <span>Check API URL: <code class="bg-gray-800 px-1 rounded">http://localhost:5000/api</code></span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <i class="fas fa-circle text-xs mt-1 mr-2 text-red-600"></i>
+                                        <span>Verify CORS is enabled on backend</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h3 class="font-medium mb-2 flex items-center">
+                                    <i class="fas fa-camera text-red-600 mr-2"></i>
+                                    Camera Issues
+                                </h3>
+                                <ul class="text-sm space-y-2 text-gray-300">
+                                    <li class="flex items-start">
+                                        <i class="fas fa-circle text-xs mt-1 mr-2 text-red-600"></i>
+                                        <span>Ensure browser has camera permission</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <i class="fas fa-circle text-xs mt-1 mr-2 text-red-600"></i>
+                                        <span>Make sure no other app is using camera</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <i class="fas fa-circle text-xs mt-1 mr-2 text-red-600"></i>
+                                        <span>Try refreshing the page</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            
+                            <div>
+                                <h3 class="font-medium mb-2 flex items-center">
+                                    <i class="fas fa-brain text-red-600 mr-2"></i>
+                                    Model Issues
+                                </h3>
+                                <ul class="text-sm space-y-2 text-gray-300">
+                                    <li class="flex items-start">
+                                        <i class="fas fa-circle text-xs mt-1 mr-2 text-red-600"></i>
+                                        <span>Check model file path in backend</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <i class="fas fa-circle text-xs mt-1 mr-2 text-red-600"></i>
+                                        <span>Review backend logs for errors</span>
+                                    </li>
+                                    <li class="flex items-start">
+                                        <i class="fas fa-circle text-xs mt-1 mr-2 text-red-600"></i>
+                                        <span>Test in good lighting conditions</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 pt-4 border-t border-gray-800">
+                            <button id="testConnectionBtn" class="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-lg text-sm transition">
+                                <i class="fas fa-plug mr-1"></i>
+                                Test Connection
+                            </button>
+                            <button id="resetAppBtn" class="bg-red-900 hover:bg-red-800 px-4 py-2 rounded-lg text-sm transition ml-3">
+                                <i class="fas fa-power-off mr-1"></i>
+                                Reset Application
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="bg-black py-4 border-t border-gray-800">
+            <div class="container mx-auto px-4 text-center text-gray-500 text-sm">
+                <p>DriveSafe Drowsiness Detection System &copy; 2025</p>
+                <p class="mt-1">Stay alert, stay safe. Drive responsibly.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script src="static/script.js"></script>
+</body>
+</html>
