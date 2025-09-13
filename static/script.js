@@ -1,6 +1,10 @@
-// Configuration
-const API_URL = 'http://localhost:5000/api';
-const FRAME_INTERVAL = 200; // Process a frame every 200ms
+// Configuration - Auto-detect API URL
+const API_URL = (() => {
+    const ports = [5001, 5002, 5003, 8000, 8080];
+    const currentPort = window.location.port || '5001';
+    return `http://localhost:${currentPort}/api`;
+})();
+const FRAME_INTERVAL = 200; // Process a frame every 200ms (configurable via backend)
 const ALERT_DURATION = 3000; // Alert stays visible for 3 seconds
 const DROWSY_COUNTER_THRESHOLD = 3; // Count of consecutive drowsy detections to trigger alert
 
@@ -137,14 +141,13 @@ async function checkBackendStatus() {
             updateServerStatus(true);
             
             if (!data.model_loaded) {
-                updateStatusMessage('Warning: Model not loaded on server. Check server logs.', 'warning');
-                startBtn.disabled = true;
-                calibrateBtn.disabled = true;
+                updateStatusMessage('Warning: Model not loaded - yawning detection will use fallback method', 'warning');
+                // Don't disable buttons - app works without model
             }
         }
     } catch (err) {
         console.error('Error connecting to backend:', err);
-        updateStatusMessage('Cannot connect to backend server. Make sure it is running at http://localhost:5000', 'error');
+        updateStatusMessage('Cannot connect to backend server. Make sure it is running at http://localhost:5001', 'error');
         updateServerStatus(false);
         startBtn.disabled = true;
         calibrateBtn.disabled = true;
@@ -381,9 +384,15 @@ async function processFrame() {
         // Update status indicators
         updateStatus(data);
         
-        // Update statistics
+        // Update statistics with memory management
         if (data.eye_aspect_ratio !== undefined) {
             stats.earValues.push(data.eye_aspect_ratio);
+            
+            // Keep only last 100 values to prevent memory leak (configurable)
+            const maxValues = 100; // This could be fetched from backend config
+            if (stats.earValues.length > maxValues) {
+                stats.earValues = stats.earValues.slice(-maxValues);
+            }
             
             // Calculate rolling average of last 10 EAR values
             const recentEarValues = stats.earValues.slice(-10);
@@ -393,6 +402,13 @@ async function processFrame() {
         
         if (data.face_confidence !== undefined) {
             stats.faceConfidenceValues.push(data.face_confidence);
+            
+            // Keep only last 100 values to prevent memory leak (configurable)
+            const maxValues = 100; // This could be fetched from backend config
+            if (stats.faceConfidenceValues.length > maxValues) {
+                stats.faceConfidenceValues = stats.faceConfidenceValues.slice(-maxValues);
+            }
+            
             faceConfidence.textContent = `${Math.round(data.face_confidence)}%`;
         }
         

@@ -163,14 +163,14 @@ python app.py
 
 The application will:
 - Automatically download the pre-trained model from Google Drive
-- Start the Flask server on `http://localhost:5000`
+- Start the Flask server on `http://localhost:5001`
 - Initialize the webcam interface
 
 ### Step 5: Access the Web Interface
 
 Open your web browser and navigate to:
 ```
-http://localhost:5000
+http://localhost:5001
 ```
 
 ---
@@ -220,7 +220,7 @@ The dashboard provides real-time information about:
 
 ### **Base URL**
 ```
-http://localhost:5000/api
+http://localhost:5001/api
 ```
 
 ### **Endpoints**
@@ -295,7 +295,7 @@ Create a `.env` file in the project root:
 FLASK_ENV=development
 FLASK_DEBUG=True
 FLASK_HOST=0.0.0.0
-FLASK_PORT=5000
+FLASK_PORT=5001
 
 # Model Configuration
 MODEL_FILE_ID=1UInMiIbaHChmI-KSQ7VRMp_53RZpSDd4
@@ -323,10 +323,10 @@ The system automatically detects available cameras:
 #### **Backend Connection Problems**
 ```bash
 # Check if Flask server is running
-curl http://localhost:5000/api/status
+curl http://localhost:5001/api/status
 
 # Verify port availability
-netstat -an | grep 5000
+netstat -an | grep 5001
 ```
 
 #### **Camera Access Issues**
@@ -351,7 +351,7 @@ netstat -an | grep 5000
 Enable debug mode for detailed logging:
 ```python
 # In app.py
-app.run(host='0.0.0.0', port=5000, debug=True)
+app.run(host='0.0.0.0', port=5001, debug=True)
 ```
 
 ---
