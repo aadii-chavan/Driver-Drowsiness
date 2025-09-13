@@ -93,6 +93,7 @@ DriveSafe is an intelligent drowsiness detection system that leverages cutting-e
 ### **Development Tools**
 - **Flask-CORS 4.0.0**: Cross-origin request handling
 - **Gdown 4.7.1**: Model file management
+- **python-dotenv**: Environment variable management
 
 ---
 
@@ -120,99 +121,86 @@ graph TB
 
 ---
 
-## 🚀 Installation Guide
+## 🚀 Quick Start: Run Locally
 
-### Prerequisites
-
-- **Python 3.10.11** or compatible version
-- **Webcam/Camera** for video input
-- **Modern Web Browser** with WebRTC support
-- **Internet Connection** for initial model download
-
-### Step 1: Clone the Repository
+### 1. **Clone the Repository**
 
 ```bash
 git clone https://github.com/aadii-chavan/Driver-Drowsiness.git
 cd Driver-Drowsiness
 ```
 
-### Step 2: Create Virtual Environment
+### 2. **Create a Virtual Environment**
 
 ```bash
-# Create virtual environment
 python -m venv drowsiness_env
-
-# Activate virtual environment
 # On Windows:
 drowsiness_env\Scripts\activate
 # On macOS/Linux:
 source drowsiness_env/bin/activate
 ```
 
-### Step 3: Install Dependencies
+### 3. **Install Dependencies**
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### Step 4: Run the Application
+### 4. **Download the Model**
+
+The app will attempt to download the model automatically on first run. If it fails, you can manually download it:
+
+- Run the helper script:
+  ```bash
+  python download_model.py
+  ```
+- Or manually download from [Google Drive](https://drive.google.com/uc?id=1UInMiIbaHChmI-KSQ7VRMp_53RZpSDd4), rename to `resnet50v2_model.keras`, and place it in the `model/` folder.
+
+> **Note:** If the model is missing, the app will still run, but yawning detection will use a fallback heuristic.
+
+### 5. **Run the Application**
 
 ```bash
 python app.py
 ```
 
-The application will:
-- Automatically download the pre-trained model from Google Drive
-- Start the Flask server on `http://localhost:5001`
-- Initialize the webcam interface
+- The Flask server will start (default: `http://localhost:5001`).
+- The backend will auto-detect your camera. If you have multiple cameras, it will try all available indices.
 
-### Step 5: Access the Web Interface
+### 6. **Access the Web Interface**
 
-Open your web browser and navigate to:
+Open your browser and go to:
 ```
 http://localhost:5001
 ```
 
 ---
 
-## 📖 Usage Instructions
+## 📝 Usage Instructions
 
 ### 🎮 **Getting Started**
 
-1. **Launch the Application**: Start the Flask server and open the web interface
-2. **Grant Camera Permission**: Allow browser access to your webcam when prompted
-3. **Calibrate the System**: Click "Calibrate" and follow the on-screen instructions
-4. **Start Monitoring**: Click "Start Monitoring" to begin drowsiness detection
+1. **Launch the Application**: Start the Flask server and open the web interface.
+2. **Grant Camera Permission**: Allow browser access to your webcam when prompted.
+3. **Calibrate the System**: Click "Calibrate" and follow the on-screen instructions.
+4. **Start Monitoring**: Click "Start Monitoring" to begin drowsiness detection.
 
 ### ⚙️ **System Controls**
 
-#### **Alert Sensitivity**
-- **Very Low**: Minimal sensitivity, fewer false positives
-- **Low**: Conservative detection threshold
-- **Medium**: Balanced detection (recommended)
-- **High**: More sensitive detection
-- **Very High**: Maximum sensitivity, may trigger more alerts
-
-#### **Eye Threshold**
-- Adjustable range: 0.15 - 0.35
-- Lower values = more sensitive to eye closure
-- Higher values = less sensitive to eye closure
-- Auto-calibrated during calibration process
-
-#### **Additional Features**
-- **Night Mode**: Optimized for low-light conditions
-- **Sound Alerts**: Enable/disable audio notifications
-- **Dark Mode**: Toggle between light and dark themes
+- **Alert Sensitivity**: Adjustable from Very Low to Very High.
+- **Eye Threshold**: Adjustable (0.15 - 0.35), auto-calibrated during calibration.
+- **Night Mode**: Optimized for low-light conditions.
+- **Sound Alerts**: Enable/disable audio notifications.
+- **Dark Mode**: Toggle between light and dark themes.
 
 ### 📊 **Monitoring Dashboard**
 
-The dashboard provides real-time information about:
-- **Face Detection Status**: Whether a face is currently detected
-- **Eye Status**: Open/closed state of eyes
-- **Mouth Status**: Normal/yawning state
-- **EAR Value**: Current Eye Aspect Ratio measurement
-- **Alert Count**: Total number of drowsiness alerts triggered
-- **Monitor Time**: Duration of current monitoring session
+- **Face Detection Status**: Whether a face is currently detected.
+- **Eye Status**: Open/closed state of eyes.
+- **Mouth Status**: Normal/yawning state.
+- **EAR Value**: Current Eye Aspect Ratio measurement.
+- **Alert Count**: Total number of drowsiness alerts triggered.
+- **Monitor Time**: Duration of current monitoring session.
 
 ---
 
@@ -228,158 +216,55 @@ http://localhost:5001/api
 #### **GET /api/status**
 Check API status and model availability.
 
-**Response:**
-```json
-{
-  "status": "API is running",
-  "model_loaded": true,
-  "endpoints": {
-    "calibrate": "/api/calibrate",
-    "detect": "/api/detect"
-  }
-}
-```
-
 #### **POST /api/calibrate**
 Calibrate the eye threshold using provided frames.
-
-**Request Body:**
-```json
-{
-  "frames": ["data:image/jpeg;base64,...", "..."]
-}
-```
-
-**Response:**
-```json
-{
-  "threshold": 0.245
-}
-```
 
 #### **POST /api/detect**
 Perform drowsiness detection on a single frame.
 
-**Request Body:**
-```json
-{
-  "image": "data:image/jpeg;base64,...",
-  "eye_threshold": 0.25,
-  "night_mode": false,
-  "sensitivity": 3
-}
-```
-
-**Response:**
-```json
-{
-  "drowsy": false,
-  "yawning": false,
-  "eyes_closed": false,
-  "face_detected": true,
-  "eye_aspect_ratio": 0.267,
-  "yawn_probability": 0.123
-}
-```
+See the full API documentation in the code or below in this README.
 
 ---
 
 ## ⚙️ Configuration
 
-### **Environment Variables**
+- All configuration is managed via `config.py` and environment variables (see `.env.example`).
+- You can override defaults by creating a `.env` file in the project root.
 
-Create a `.env` file in the project root:
-
+Example `.env`:
 ```env
-# Flask Configuration
 FLASK_ENV=development
 FLASK_DEBUG=True
 FLASK_HOST=0.0.0.0
 FLASK_PORT=5001
-
-# Model Configuration
 MODEL_FILE_ID=1UInMiIbaHChmI-KSQ7VRMp_53RZpSDd4
 MODEL_PATH=./model/resnet50v2_model.keras
-
-# Detection Parameters
 DEFAULT_EYE_THRESHOLD=0.25
 EYES_CLOSED_DURATION=1
 YAWNING_DURATION=3
 ```
 
-### **Camera Configuration**
-
-The system automatically detects available cameras:
-- **Primary Camera**: Index 0 (default)
-- **External Camera**: Index 1 (if available)
-- **Fallback**: Automatically switches to available camera
-
 ---
 
-## 🔧 Troubleshooting
+## 🧰 Troubleshooting
 
-### **Common Issues**
+### Common Issues
 
-#### **Backend Connection Problems**
-```bash
-# Check if Flask server is running
-curl http://localhost:5001/api/status
+- **Backend Connection Problems**: Ensure Flask server is running and port is available.
+- **Camera Access Issues**: Grant browser camera permissions, close other apps using the camera.
+- **Model Loading Errors**: Check your internet connection or manually download the model.
+- **Performance Issues**: Lower frame rate, close other apps, or reduce camera resolution.
 
-# Verify port availability
-netstat -an | grep 5001
-```
+### Debugging
 
-#### **Camera Access Issues**
-- Ensure browser has camera permissions
-- Check if other applications are using the camera
-- Try refreshing the browser page
-- Verify camera is properly connected
-
-#### **Model Loading Errors**
-- Check internet connection for model download
-- Verify Google Drive model file accessibility
-- Check available disk space (model ~50MB)
-
-#### **Performance Issues**
-- Reduce frame processing frequency
-- Lower camera resolution
-- Close unnecessary browser tabs
-- Ensure adequate system resources
-
-### **Debug Mode**
-
-Enable debug mode for detailed logging:
-```python
-# In app.py
-app.run(host='0.0.0.0', port=5001, debug=True)
-```
+- Enable debug mode in `.env` or by running `app.py` with `debug=True`.
+- Check `app.log` for backend errors.
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions to improve DriveSafe! Please follow these guidelines:
-
-### **Development Setup**
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Make your changes and test thoroughly
-4. Commit your changes: `git commit -m 'Add amazing feature'`
-5. Push to the branch: `git push origin feature/amazing-feature`
-6. Open a Pull Request
-
-### **Code Standards**
-- Follow PEP 8 Python style guidelines
-- Add comprehensive docstrings to functions
-- Include unit tests for new features
-- Update documentation as needed
-
-### **Areas for Contribution**
-- Enhanced detection algorithms
-- Mobile app development
-- Additional language support
-- Performance optimizations
-- UI/UX improvements
+We welcome contributions! Please fork the repo, create a feature branch, and submit a pull request. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ---
 
@@ -401,7 +286,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 For support, questions, or feature requests:
-
 - **GitHub Issues**: [Create an issue](https://github.com/aadii-chavan/Driver-Drowsiness/issues)
 - **Documentation**: Check this README and inline code comments
 - **Community**: Join discussions in the GitHub repository
