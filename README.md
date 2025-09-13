@@ -10,7 +10,6 @@
 
 **A sophisticated real-time drowsiness detection system designed to enhance road safety through AI-powered monitoring.**
 
-[![GitHub Repository](https://github.com/aadii-chavan/Driver-Drowsiness.git)](https://github.com/aadii-chavan/Driver-Drowsiness.git)
 
 </div>
 
