@@ -1,7 +1,7 @@
-Flask==2.3.3
+Flask==3.0.0
 flask-cors==4.0.0
-tensorflow==2.13.0
-opencv-python==4.8.0.76
-numpy==1.23.5
-mediapipe==0.10.3
+tensorflow==2.15.0
+opencv-python==4.9.0.80
+numpy==1.24.3
+mediapipe==0.10.8
 gdown==4.7.1
