@@ -27,7 +27,7 @@ app = Flask(__name__, template_folder=TEMPLATES_DIR, static_folder=STATIC_DIR)
 app.config.from_object(config)
 
 # Configure CORS
-CORS(app, origins=config.CORS_ORIGINS)
+CORS(app, origins=config.CORS_ORIGINS, supports_credentials=True)
 
 # Configure logging
 logging.basicConfig(
@@ -117,7 +117,8 @@ def initialize_camera():
     print("   - Camera permissions are granted")
     return None
 
-cap = initialize_camera()
+# Remove global cap initialization
+# cap = initialize_camera()
 
 
 
@@ -167,6 +168,7 @@ def home():
 
 @app.route('/video_feed')
 def video_feed():
+    cap = initialize_camera()  # Initialize camera only when this endpoint is accessed
     def generate_frames():
         if cap is None:
             # Return a placeholder image if no camera
@@ -224,6 +226,8 @@ def video_feed():
                 yield (b'--frame\r\n'
                        b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
                 break
+        if cap is not None:
+            cap.release()  # Release camera when done
 
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
@@ -234,7 +238,8 @@ def api_status():
     return jsonify({
         'status': 'API is running',
         'model_loaded': bool(model_loaded),
-        'camera_available': cap is not None,
+        # 'camera_available': cap is not None,  # Remove this line, or set to None/True
+        'camera_available': None,  # Or implement a dynamic check if you want
         'endpoints': {
             'calibrate': '/api/calibrate',
             'detect': '/api/detect',

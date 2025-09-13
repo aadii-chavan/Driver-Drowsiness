@@ -36,7 +36,11 @@ class Config:
     FRAME_PROCESSING_INTERVAL = int(os.environ.get('FRAME_PROCESSING_INTERVAL', 200))
     
     # Security Configuration
-    CORS_ORIGINS = os.environ.get('CORS_ORIGINS', '*').split(',')
+    CORS_ORIGINS = [
+        "http://localhost:5001",
+        "http://127.0.0.1:5001",
+        "*"
+    ]
     RATE_LIMIT_ENABLED = os.environ.get('RATE_LIMIT_ENABLED', 'True').lower() == 'true'
     RATE_LIMIT_REQUESTS = int(os.environ.get('RATE_LIMIT_REQUESTS', 100))
     RATE_LIMIT_WINDOW = int(os.environ.get('RATE_LIMIT_WINDOW', 60))

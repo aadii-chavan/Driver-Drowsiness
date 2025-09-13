@@ -2,7 +2,8 @@
 const API_URL = (() => {
     const ports = [5001, 5002, 5003, 8000, 8080];
     const currentPort = window.location.port || '5001';
-    return `http://localhost:${currentPort}/api`;
+    const host = window.location.hostname; // Use the same host as the frontend
+    return `http://${host}:${currentPort}/api`;
 })();
 const FRAME_INTERVAL = 200; // Process a frame every 200ms (configurable via backend)
 const ALERT_DURATION = 3000; // Alert stays visible for 3 seconds
@@ -147,7 +148,7 @@ async function checkBackendStatus() {
         }
     } catch (err) {
         console.error('Error connecting to backend:', err);
-        updateStatusMessage('Cannot connect to backend server. Make sure it is running at http://localhost:5001', 'error');
+        updateStatusMessage('Cannot connect to backend server. Make sure it is running at the same address as this page.', 'error');
         updateServerStatus(false);
         startBtn.disabled = true;
         calibrateBtn.disabled = true;
@@ -194,6 +195,7 @@ async function startDetection() {
     try {
         stream = await navigator.mediaDevices.getUserMedia({ video: true });
         video.srcObject = stream;
+        video.style.transform = 'scaleX(-1)'; // Mirror the video
         
         startBtn.disabled = true;
         calibrateBtn.disabled = true;
